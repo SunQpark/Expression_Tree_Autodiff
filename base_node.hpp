@@ -2,27 +2,23 @@
 #include<iostream>
 
 enum{NULLARY, UNARY, BINARY};
-enum{CONSTANT, VARIABLE, ADDITION, SUBSTRACTION, MULTIPLICATION};
-using ring = double;
+using namespace std;
+using ring = long double;
 
 
 class Node{
 public:
     Node(){
+        zero_grad();
     }
 
     Node(ring value): data(value){
-        grad = 0.0;
-        requires_grad = false;
+        
     }
 
-    int type;
-    ring data;
-    ring grad;
-    bool requires_grad;
-
     virtual ring forward(){
-        return data;
+        cache = data;
+        return cache;
     }
 
     virtual void backward(ring gradient) {
@@ -30,40 +26,76 @@ public:
     }
 
     virtual void print(){}
-    virtual ~Node(){}
+    
+    void set_type(int node_type){
+        type = node_type;
+    }
+    
+    virtual void zero_grad(){
+        grad = 0.0;
+    }
+
+    ring data;
+    ring grad;
+    ring cache;
+
+private:
+    int type;
 };
 
 
 class Operator: public Node {
 public:
-    Operator(): n_operand(NULLARY), data(0){
-        lhs = NULL;
-        rhs = NULL;
-        grad = 0.0;
+    Operator(): Node(), n_operand(NULLARY){
+        lhs = nullptr;
+        rhs = nullptr;
     }
 
-    Operator(ring value): n_operand(NULLARY), data(value){
-        lhs = NULL;
-        rhs = NULL;
-        grad = 0.0;
-    }
-
-    Operator(Node &child): n_operand(UNARY){
+    Operator(Node &child): Node(), n_operand(UNARY){
         lhs = &child;
-        rhs = NULL;
-        grad = 0.0;
+        rhs = nullptr;
     }
 
-    Operator(Node &child1, Node &child2): n_operand(BINARY){
+    Operator(Node &child1, Node &child2): Node(), n_operand(BINARY){
         lhs = &child1;
         rhs = &child2;
-        grad = 0.0;
     }
-    
-private:
-    int n_operand;
-    int type;
-    ring data;
+
     Node* lhs;
     Node* rhs;
+
+    void zero_grad() override {
+        grad = 0.0;
+        switch (n_operand){
+            case NULLARY:
+                break;
+            case UNARY:
+                lhs->zero_grad();
+                break;
+            case BINARY:
+                lhs->zero_grad();
+                rhs->zero_grad();
+                break;
+            default:
+                break;
+        }
+    }
+
+    // ~Operator(){
+    //     switch (n_operand){
+    //         case NULLARY:
+    //             break;
+    //         case UNARY:
+    //             lhs->~Node();
+    //             break;
+    //         case BINARY:
+    //             lhs->~Node();
+    //             rhs->~Node();
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // }
+private:
+    int n_operand;
 };

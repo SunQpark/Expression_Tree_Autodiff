@@ -4,6 +4,6 @@
 
 
 int main() {
-    test_pow();
+    test_diff_eq();
     return 0;
 }   
